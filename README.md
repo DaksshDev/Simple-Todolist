@@ -1,70 +1,38 @@
-# Getting Started with Create React App
+# Firelist
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Minimal Vercel‑styled task board built with **React**, **Vite**, **Tailwind CSS**, and **canvas‑confetti**.  
+You can create groups, lists, and tasks, drag cards between lists, drop into **Done** for colorful confetti, and tag tasks with colored labels that persist in `localStorage`.
 
-## Available Scripts
+## Getting started
 
-In the project directory, you can run:
+### 1. Install dependencies
 
-### `npm start`
+From the project root:
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+```bash
+npm install
+```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### 2. Run the dev server
 
-### `npm test`
+```bash
+npm run dev
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Then open the URL Vite prints in the terminal (by default `http://localhost:3000`).
 
-### `npm run build`
+### 3. Build for production
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```bash
+npm run build
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+This outputs an optimized static bundle in `dist/` which you can deploy to any static host.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Features
 
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- **Vercel‑like dark UI** with a centered Firelist header.
+- **Groups & lists**: accordion groups with per‑group list creation, drag‑to‑reorder lists.
+- **Tasks with tags**: add tasks via modal, type tags and confirm with a comma to turn them into removable chips.
+- **Done column**: works like a normal list, but dropping cards here shows a green tick pill and fires colorful confetti.
+- **Persistence**: groups, lists, and tasks are stored in `localStorage`, so they survive refreshes.
