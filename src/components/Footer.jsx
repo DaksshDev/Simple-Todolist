@@ -4,7 +4,7 @@ function Footer() {
   return (
     <footer className="mt-6 pt-4 border-t border-zinc-900 text-[10px] text-zinc-500 flex flex-col sm:flex-row items-center justify-between gap-3">
       <a
-        href="https://github.com/daksshdev"
+        href="https://github.com/daksshdev/simple-todolist"
         target="_blank"
         rel="noreferrer"
         className="inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-black/50 px-3 py-1.5 hover:border-zinc-600 hover:text-zinc-200"
