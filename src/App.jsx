@@ -6,10 +6,13 @@ import Footer from './components/Footer.jsx';
 import TaskModal from './components/TaskModal.jsx';
 import GroupModal from './components/GroupModal.jsx';
 import GroupSection from './components/GroupSection.jsx';
+import ListColorModal from './components/ListColorModal.jsx';
 
 const INITIAL_GROUPS = [
   { id: 'default', name: 'Default' },
 ];
+
+const DEFAULT_LIST_COLOR = null;
 
 const INITIAL_LISTS = [
   { id: 'todo', name: 'Todo', type: 'custom', groupId: 'default' },
@@ -65,8 +68,10 @@ function App() {
 
   const [groupModal, setGroupModal] = useState(null); // { mode: 'create'|'rename'|'delete', groupId?: string }
   const [groupNameInput, setGroupNameInput] = useState('');
+  const [listColorModal, setListColorModal] = useState(null); // { context: 'create'|'edit', groupId?, listId?, currentColor? }
+  const [createListColorByGroup, setCreateListColorByGroup] = useState({});
 
-  // Load from localStorage
+  // Load from localStorage (preserves list colors and all list fields)
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
@@ -85,7 +90,7 @@ function App() {
     }
   }, []);
 
-  // Persist to localStorage
+  // Persist to localStorage (includes list colors)
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const payload = JSON.stringify({ groups, lists, todos });
@@ -157,7 +162,7 @@ function App() {
     setModalTags([]);
   };
 
-  const addList = (groupId, name) => {
+  const addList = (groupId, name, color = DEFAULT_LIST_COLOR) => {
     if (!name || !name.trim()) return;
     const id = name.toLowerCase().replace(/\s+/g, '-');
     if (lists.some((l) => l.id === id)) {
@@ -171,8 +176,26 @@ function App() {
     }
     setLists((prev) => [
       ...prev,
-      { id, name: name.trim(), type: 'custom', groupId: targetGroupId },
+      {
+        id,
+        name: name.trim(),
+        type: 'custom',
+        groupId: targetGroupId,
+        ...(color ? { color } : {}),
+      },
     ]);
+  };
+
+  const updateList = (listId, { name, color }) => {
+    setLists((prev) =>
+      prev.map((l) => {
+        if (l.id !== listId) return l;
+        const next = { ...l };
+        if (name !== undefined) next.name = name;
+        if (color !== undefined) next.color = color;
+        return next;
+      })
+    );
   };
 
   const deleteTodo = (id) => {
@@ -260,7 +283,13 @@ function App() {
                 activeListId={activeListId}
                 onListEnter={handleListEnter}
                 onTaskMouseDown={handleCardMouseDown}
-                onAddList={(name) => addList(group.id, name)}
+                onAddList={(name, color) => {
+                  addList(group.id, name, color ?? createListColorByGroup[group.id] ?? DEFAULT_LIST_COLOR);
+                  setCreateListColorByGroup((prev) => ({ ...prev, [group.id]: undefined }));
+                }}
+                createListColor={createListColorByGroup[group.id]}
+                onOpenListColorModal={(opts) => setListColorModal(opts)}
+                onUpdateList={updateList}
                 onDeleteList={deleteList}
                 onDeleteTodo={deleteTodo}
                 onOpenTaskModal={openModalForList}
@@ -333,6 +362,26 @@ function App() {
           }
           onSubmit={handleModalSubmit}
           onClose={closeModal}
+        />
+
+        <ListColorModal
+          key={listColorModal?.listId ?? listColorModal?.groupId ?? 'create'}
+          isOpen={!!listColorModal}
+          currentColor={
+            listColorModal?.context === 'edit' && listColorModal?.listId
+              ? lists.find((l) => l.id === listColorModal.listId)?.color
+              : listColorModal?.context === 'create'
+                ? createListColorByGroup[listColorModal?.groupId]
+                : undefined
+          }
+          onSelect={(color) => {
+            if (listColorModal?.context === 'create' && listColorModal?.groupId) {
+              setCreateListColorByGroup((prev) => ({ ...prev, [listColorModal.groupId]: color }));
+            } else if (listColorModal?.context === 'edit' && listColorModal?.listId) {
+              updateList(listColorModal.listId, { color });
+            }
+          }}
+          onClose={() => setListColorModal(null)}
         />
 
         <GroupModal

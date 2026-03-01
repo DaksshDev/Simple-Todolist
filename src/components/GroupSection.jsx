@@ -7,7 +7,27 @@ import {
   LuPencil,
   LuTrash2,
   LuCheck,
+  LuPalette,
 } from 'react-icons/lu';
+
+const hexToRgba = (hex, alpha = 0.18) => {
+  if (!hex || hex[0] !== '#' || (hex.length !== 7 && hex.length !== 4)) {
+    return `rgba(24,24,27,${alpha})`;
+  }
+  let r;
+  let g;
+  let b;
+  if (hex.length === 4) {
+    r = parseInt(hex[1] + hex[1], 16);
+    g = parseInt(hex[2] + hex[2], 16);
+    b = parseInt(hex[3] + hex[3], 16);
+  } else {
+    r = parseInt(hex.slice(1, 3), 16);
+    g = parseInt(hex.slice(3, 5), 16);
+    b = parseInt(hex.slice(5, 7), 16);
+  }
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
 
 function GroupSection({
   group,
@@ -23,12 +43,17 @@ function GroupSection({
   onDeleteList,
   onDeleteTodo,
   onOpenTaskModal,
+  onUpdateList,
+  onOpenListColorModal,
+  createListColor,
   draggedListId,
   onReorderLists,
   isOverDone,
   showDonePulse,
 }) {
   const [newListName, setNewListName] = useState('');
+  const [editingListId, setEditingListId] = useState(null);
+  const [editingListName, setEditingListName] = useState('');
 
   const listsForGroup = lists;
   const customLists = listsForGroup.filter((l) => l.type === 'custom');
@@ -43,16 +68,42 @@ function GroupSection({
 
   const handleAddList = () => {
     if (!newListName.trim()) return;
-    onAddList(newListName.trim());
+    onAddList(newListName.trim(), createListColor);
     setNewListName('');
+  };
+
+  const startEditList = (list) => {
+    setEditingListId(list.id);
+    setEditingListName(list.name);
+  };
+
+  const saveEditList = () => {
+    if (!editingListId) return;
+    if (editingListName.trim()) {
+      onUpdateList(editingListId, { name: editingListName.trim() });
+    }
+    setEditingListId(null);
+    setEditingListName('');
+  };
+
+  const cancelEditList = () => {
+    setEditingListId(null);
+    setEditingListName('');
   };
 
   return (
     <section className="px-1 py-2">
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         onClick={onToggleOpen}
-        className="flex w-full items-center justify-between text-left group px-1 py-1"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onToggleOpen();
+          }
+        }}
+        className="flex w-full cursor-pointer items-center justify-between text-left group px-1 py-1"
       >
         <div className="flex items-center gap-2">
           <span className="h-1.5 w-1.5 rounded-full bg-zinc-500" />
@@ -92,7 +143,7 @@ function GroupSection({
             </button>
           </div>
         </div>
-      </button>
+      </div>
 
       {isOpen && (
         <div className="mt-3 grid grid-cols-[minmax(0,2.1fr)_minmax(0,1.2fr)] gap-6 items-start">
@@ -112,6 +163,19 @@ function GroupSection({
             />
             <button
               type="button"
+              onClick={() => onOpenListColorModal({ context: 'create', groupId: group.id, currentColor: createListColor })}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border-2 transition-colors hover:opacity-90"
+              style={{
+                borderColor: createListColor || '#3f3f46',
+                backgroundColor: createListColor ? `${createListColor}20` : 'transparent',
+                color: createListColor ? createListColor : '#a1a1aa',
+              }}
+              title="List color"
+            >
+              <LuPalette className="h-4 w-4" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
               onClick={handleAddList}
               className="inline-flex items-center justify-center rounded-xl bg-white text-black text-xs font-medium px-3 py-1.5 hover:bg-zinc-200"
             >
@@ -124,11 +188,13 @@ function GroupSection({
             {customLists.map((list) => {
               const items = getTodosForList(list.id);
               const isActive = activeListId === list.id;
+              const isEditing = editingListId === list.id;
+              const listColor = list.color || null;
               return (
                 <div
                   key={list.id}
-                  draggable
-                  onDragStart={() => group.onListDragStart(list.id)}
+                  draggable={!isEditing}
+                  onDragStart={() => !isEditing && group.onListDragStart(list.id)}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => {
                     e.preventDefault();
@@ -138,30 +204,82 @@ function GroupSection({
                   className={`relative rounded-2xl border ${
                     isActive ? 'border-zinc-500/70' : 'border-zinc-900'
                   } bg-zinc-1000/40 p-3.5 min-h-[260px] transition-colors`}
+                  style={{
+                    ...(listColor ? { backgroundColor: hexToRgba(listColor, 0.22) } : {}),
+                  }}
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-1.5">
-                      <span className="h-1.5 w-1.5 rounded-full bg-zinc-600" />
-                      <h2 className="text-xs font-medium text-zinc-100 tracking-tight">
-                        {list.name}
-                      </h2>
+                      <span
+                        className="h-1.5 w-1.5 rounded-full shrink-0"
+                        style={{ backgroundColor: listColor || '#52525b' }}
+                      />
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={editingListName}
+                          onChange={(e) => setEditingListName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') saveEditList();
+                            if (e.key === 'Escape') cancelEditList();
+                          }}
+                          className="text-xs font-medium text-zinc-100 bg-black/40 rounded px-2 py-0.5 outline-none focus:ring-1 focus:ring-zinc-500 w-full max-w-[140px]"
+                          autoFocus
+                        />
+                      ) : (
+                        <h2 className="text-xs font-medium text-zinc-100 tracking-tight">
+                          {list.name}
+                        </h2>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] text-zinc-500">{items.length}</span>
-                      <button
-                        type="button"
-                        onClick={() => onOpenTaskModal(list.id)}
-                        className="flex h-5 w-5 items-center justify-center rounded-full border border-zinc-700 text-[11px] text-zinc-300 hover:border-zinc-400 hover:text-zinc-50 transition-colors"
-                      >
-                        <LuPlus className="h-3 w-3" aria-hidden="true" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onDeleteList(list.id)}
-                        className="flex h-5 w-5 items-center justify-center rounded-full border border-zinc-800 text-[11px] text-zinc-400 hover:text-red-300 hover:border-red-500/80 transition-colors"
-                      >
-                        <LuTrash2 className="h-3 w-3" aria-hidden="true" />
-                      </button>
+                      {!isEditing && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => startEditList(list)}
+                            className="flex h-5 w-5 items-center justify-center rounded-full border border-zinc-800 text-zinc-400 hover:text-zinc-100 hover:border-zinc-500 transition-colors"
+                            title="Edit list"
+                          >
+                            <LuPencil className="h-3 w-3" aria-hidden="true" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onOpenTaskModal(list.id)}
+                            className="flex h-5 w-5 items-center justify-center rounded-full border border-zinc-700 text-[11px] text-zinc-300 hover:border-zinc-400 hover:text-zinc-50 transition-colors"
+                          >
+                            <LuPlus className="h-3 w-3" aria-hidden="true" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onDeleteList(list.id)}
+                            className="flex h-5 w-5 items-center justify-center rounded-full border border-zinc-800 text-[11px] text-zinc-400 hover:text-red-300 hover:border-red-500/80 transition-colors"
+                          >
+                            <LuTrash2 className="h-3 w-3" aria-hidden="true" />
+                          </button>
+                        </>
+                      )}
+                      {isEditing && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={saveEditList}
+                            className="flex h-5 w-5 items-center justify-center rounded-full border border-emerald-600/60 text-emerald-400 hover:bg-emerald-500/20"
+                            title="Save"
+                          >
+                            <LuCheck className="h-3 w-3" aria-hidden="true" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={cancelEditList}
+                            className="flex h-5 w-5 items-center justify-center rounded-full border border-zinc-800 text-zinc-400 hover:text-zinc-100"
+                            title="Cancel"
+                          >
+                            <LuX className="h-3 w-3" aria-hidden="true" />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -208,6 +326,23 @@ function GroupSection({
                       </p>
                     )}
                   </div>
+                  {isEditing && (
+                    <div className="absolute bottom-3 right-3">
+                      <button
+                        type="button"
+                        onClick={() => onOpenListColorModal({ context: 'edit', listId: list.id, currentColor: list.color })}
+                        className="flex h-7 w-7 items-center justify-center rounded-lg border-2 transition-colors hover:opacity-90"
+                        style={{
+                          borderColor: listColor || '#3f3f46',
+                          backgroundColor: listColor ? `${listColor}20` : 'transparent',
+                          color: listColor || '#a1a1aa',
+                        }}
+                        title="List color"
+                      >
+                        <LuPalette className="h-3.5 w-3.5" aria-hidden="true" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })}
