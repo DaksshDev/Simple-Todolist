@@ -253,7 +253,14 @@ function GroupSection({
                           </button>
                           <button
                             type="button"
-                            onClick={() => onDeleteList(list.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // ask for confirmation before deleting a list
+                              // eslint-disable-next-line no-restricted-globals
+                              if (window.confirm(`Delete list "${list.name}"? This will also remove its cards.`)) {
+                                onDeleteList(list.id);
+                              }
+                            }}
                             className="flex h-5 w-5 items-center justify-center rounded-full border border-zinc-800 text-[11px] text-zinc-400 hover:text-red-300 hover:border-red-500/80 transition-colors"
                           >
                             <LuTrash2 className="h-3 w-3" aria-hidden="true" />

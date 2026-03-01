@@ -7,6 +7,7 @@ import TaskModal from './components/TaskModal.jsx';
 import GroupModal from './components/GroupModal.jsx';
 import GroupSection from './components/GroupSection.jsx';
 import ListColorModal from './components/ListColorModal.jsx';
+import { LuTrash2 } from 'react-icons/lu';
 
 const INITIAL_GROUPS = [
   { id: 'default', name: 'Default' },
@@ -58,6 +59,7 @@ function App() {
   const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
   const [activeListId, setActiveListId] = useState(null);
   const [isOverDone, setIsOverDone] = useState(false);
+  const [isOverDelete, setIsOverDelete] = useState(false);
   const [showDonePulse, setShowDonePulse] = useState(false);
   const [draggedListId, setDraggedListId] = useState(null);
 
@@ -105,7 +107,11 @@ function App() {
     };
 
     const handleMouseUp = () => {
-      if (draggedItem && activeListId) {
+      // If dropped over delete area, remove the todo
+      if (draggedItem && isOverDelete) {
+        setTodos((prev) => prev.filter((t) => t.id !== draggedItem.id));
+        setIsOverDelete(false);
+      } else if (draggedItem && activeListId) {
         const targetList = lists.find((l) => l.id === activeListId);
         setTodos((prev) =>
           prev.map((todo) =>
@@ -344,6 +350,26 @@ function App() {
           </div>
         )}
 
+        {/* Delete overlay - appears while dragging */}
+        {draggedItem && (
+          <div
+            onMouseEnter={() => setIsOverDelete(true)}
+            onMouseLeave={() => setIsOverDelete(false)}
+            className={`fixed left-1/2 bottom-10 -translate-x-1/2 z-40 transition-all duration-150 flex items-center justify-center pointer-events-auto`}
+            style={{
+              transformOrigin: 'center',
+            }}
+          >
+            <div
+              className={`flex items-center justify-center flex-col gap-2 rounded-3xl p-3 bg-red-600/20 border border-red-500/30 text-red-50 shadow-lg transition-transform duration-150 ${isOverDelete ? 'scale-110' : 'scale-100'}`}
+            >
+              <div className="flex items-center justify-center bg-red-600 text-white rounded-full h-10 w-10">
+                <LuTrash2 className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <div className="text-[12px] text-red-100">Drop to delete</div>
+            </div>
+          </div>
+        )}
         <TaskModal
           isOpen={!!activeModalListId}
           listName={lists.find((l) => l.id === activeModalListId)?.name || ''}
